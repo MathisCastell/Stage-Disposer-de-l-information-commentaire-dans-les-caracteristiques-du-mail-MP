@@ -22,3 +22,11 @@ Résultat :
 
 ## Création de la page de modification 
 
+Je défini les variables.
+Je fais les requêtes SQL pour afficher les valeurs déjà présentes dans les champs.
+J'appelle la PS qui aura pour but de modifier les valeurs dans la base de donnée.
+J'affiche les différents champs défini plus haut.
+
+Résultat :
+
+![image](https://github.com/MathisCastell/Stage-Disposer-de-l-information-commentaire-dans-les-caracteristiques-du-mail-MP/assets/148212506/ba688127-58c9-45a9-bfd1-072b07ee3d0f)
