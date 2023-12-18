@@ -1,0 +1,261 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<form> <localhost> <user>
+
+	<passageSession>
+		<nom></nom>
+		<valeur></valeur>
+	</passageSession>
+
+		<!-- ****** Preambule : variables de session, etc. ****** -->
+			
+			<!-- ______________________________________________________
+						Configuration Zend du formulaire
+			___________________________________________________________ -->
+			<formConfig>
+				<name>frm_MsgMailIn_CompleteReadMAIL_MP</name><!-- L'id html du formulaire : <form id="...  -->
+				<method>post</method>
+				<elements>
+					<variables_session>
+						<type>textarea</type>
+						<options>
+							<readonly/>
+							<value>Var session = ?</value>
+							<cols>100</cols> <rows>1</rows>
+						</options>
+					</variables_session>
+					<!-- ______________________________________________________
+								DESCRIPTION DU COURRIER
+					___________________________________________________________ -->
+					<tout_sur_dccourrieremis>
+						<type>textarea</type>
+						<options>
+							<readonly/>
+							<cols>143</cols> <rows>17</rows>
+						</options>
+					</tout_sur_dccourrieremis>
+					
+					<modif_contenu>
+						<type>hidden</type>
+					</modif_contenu>
+					<!-- ______________________________________________________
+								ZONE RELEVES DE COMPTE
+					___________________________________________________________ -->
+					<e_Void>
+						<type>hidden</type>
+						<options>
+						<readonly/>
+						</options>
+					</e_Void>
+					<listeSources>
+						<type>textarea</type>
+					</listeSources>
+					<ajoutSource>
+						<type>textarea</type>
+						<options>
+							<readonly/>
+							<cols>100</cols><!-- KLEE: A ne pas changer -->
+							<rows>3</rows>
+						</options>
+					</ajoutSource>
+
+					<listePiecesJointes>
+						<type>textarea</type>
+					</listePiecesJointes>					
+					
+					<NewDocFromMailPJ>
+						<type>textarea</type>
+					</NewDocFromMailPJ>					
+
+					<submitSauver>
+						<type>submit</type>
+						<options>
+							<label>Marquer comme non lu</label>
+						</options>
+					</submitSauver>
+					<submitAnnuler>
+						<type>submit</type>
+						<options>
+							<label>Retour</label>
+						</options>
+					</submitAnnuler>
+				</elements>
+			</formConfig>
+			
+			<!-- **************************************************************************
+			____________   Configuration "métier" spécifique du formulaire    ___________
+			_______________________________________________________________________________ -->
+			<formConfigSql>
+				<defaultValues>
+					<!-- Lecture de l'objet présenté par le formulaire  -->
+					<champsTexte>
+						<defautValue>
+							<sql>
+							<!-- ATTENTION Tous les champs rapportes par le SELECT doivent avoir un element de meme nom -->
+							SELECT
+							CONCAT('ClientId=',IFNULL(%SESSION_ClientId%,'null')
+								, ' ; UserId=',IFNULL(%SESSION_UserId%,'null')
+								, ' ; DossierId=',IFNULL(%SESSION_DossierId%,'null')
+								, ' ; PersonneProtegeeId=',IFNULL(%SESSION_PersonneProtegeeId%,'null')
+								, ' ; PersonneId=',IFNULL(%SESSION_PersonneId%,'null')
+								, ' ; MailId=', IFNULL(%SESSION_MailId%,'null')
+							) AS variables_session;
+							</sql>
+				 		</defautValue>
+						<defautValue>
+							<sql>
+								SELECT MsgMailIn_SetLu (%SESSION_ClientId%, %SESSION_DossierId%, %SESSION_UserId%, %SESSION_MailId%) AS e_Void ;
+							</sql>
+						</defautValue>
+					</champsTexte>
+					<!-- _______  Liste de références  _____________ -->
+					<listesReference><!-- Liste des champs devant faire l'objet d'une requête SQL pour alimentation -->
+					</listesReference>
+					
+				</defaultValues>			
+				<defautValuesHtml>				
+					<defautValue for="ContenuMail">
+				    <sql>
+						SELECT  IFNULL(DATE_FORMAT(m.date, '%%d/%%m/%%Y %%H:%%i:%%s'),' - ') AS m_mail_Date
+							  , IFNULL(PREG_REPLACE("/&lt;/","&amp;lt;", PREG_REPLACE("/&gt;/","&amp;gt;", m.from)),' - ') AS m_mail_From
+							  , IFNULL(PREG_REPLACE("/&lt;/","&amp;lt;", PREG_REPLACE("/&gt;/","&amp;gt;", m.to)),' - ') AS m_mail_To
+							  , IFNULL(PREG_REPLACE("/&lt;/","&amp;lt;", PREG_REPLACE("/&gt;/","&amp;gt;", m.cc)),' - ') AS m_mail_Cc
+							  , IFNULL(PREG_REPLACE("/&lt;/","&amp;lt;", PREG_REPLACE("/&gt;/","&amp;gt;", m.bcc)),' - ') AS m_mail_Cci
+							  , IFNULL(PREG_REPLACE("/&lt;/","&amp;lt;", PREG_REPLACE("/&gt;/","&amp;gt;", m.subject)),' - ') AS m_mail_Objet
+							  , IF(m.html = '', PREG_REPLACE("/\n/","&lt;br/&gt;",m.text), IFNULL(m.html, PREG_REPLACE("/\n/","&lt;br/&gt;",m.text))) AS m_mail_Corps
+						FROM msg_mail m
+						WHERE 	m.fkClient=%SESSION_ClientId% 
+							AND m.fkDossier=%SESSION_DossierId%
+							AND m.Id=%SESSION_MailId%	
+  				    </sql>
+					<html>
+						<div class="font_default_color">
+							<fieldset style="background-color: #FFFFFF; color: #000000;">
+								<legend class="font_default_color">Détail</legend>
+									<table>
+										<tr><th class="font_default_color" style="font-weight:normal">De</th><td><var>m_mail_From</var></td></tr>
+										<tr><th class="font_default_color" style="font-weight:normal">À</th><td><var>m_mail_To</var></td></tr>
+										<tr><th class="font_default_color" style="font-weight:normal">Cc</th><td><var>m_mail_Cc</var></td></tr>
+										<tr><th class="font_default_color" style="font-weight:normal">Cci</th><td><var>m_mail_Cci</var></td></tr>
+										<tr><th class="font_default_color" style="font-weight:normal">Date</th><td><var>m_mail_Date</var></td></tr>
+									</table><br/>
+								<div style="text-align:left;">
+									<normal class="font_default_color">Objet  : </normal><var>m_mail_Objet</var><br/>
+								</div><br/>
+								<div style="text-align:left;">
+									<normal class="font_default_color">Corps  : </normal>
+										<div style="padding-left:15px; padding-right:10px;">
+										<script language="javascript">
+											$(document).ready(function(){ injectHTML("htmlSourceContent","iFrameDynamicContent"); }); 
+										</script>
+										<textarea class="hidden" id="htmlSourceContent" name="htmlSourceContent" maxlength="0" rows="0" cols="0"><var>m_mail_Corps</var></textarea>
+										<div class="iframe-embed-wrapper">
+											<iframe id="iFrameDynamicContent" src="about:blank" class="iframe-embed">
+												<p>La configuration du navigateur ne permet pas d'afficher le contenu du mail.</p>
+											</iframe>
+										</div>
+										
+										<br/>
+									</div>
+								</div>
+							</fieldset>
+				      </div>
+					  				 
+				    </html>
+					</defautValue>
+					<defautValue for="rattachement">
+					<sql>
+
+						SELECT IFNULL(oo.Intitule, 'Aucun') AS nObligation
+						, IFNULL(psa.Denomination_NP, 'Aucun') AS nPersonne
+						, IFNULL(bb.Intitule, 'Aucun') AS nBien
+						, IFNULL(m.Commentaires, '') AS nCommentaire
+						FROM msg_mail m
+						LEFT JOIN ob_obligation oo ON m.fkObligation = oo.ID
+						LEFT JOIN pegenerique_shortread_adresse_libelle psa ON m.fkPersonne = psa.Id
+						LEFT JOIN bi_bien bb ON m.fkBien = bb.Id
+						WHERE m.fkClient = %SESSION_ClientId%
+						AND m.fkDossier=%SESSION_DossierId%
+						AND m.Id=%SESSION_MailId%	
+					</sql>
+					<html>
+						<div class="font_default_color">
+							<fieldset style="background-color: #FFFFFF; color: #000000;">
+								<legend class="font_default_color">Détail</legend>
+									<table>
+										<tr><th class="font_default_color" style="font-weight:normal">Contrat</th><td><var>nObligation</var></td></tr>
+										<tr><th class="font_default_color" style="font-weight:normal">Correspondant</th><td><var>nPersonne</var></td></tr>
+										<tr><th class="font_default_color" style="font-weight:normal">Bien</th><td><var>nBien</var></td></tr>
+										<tr><th class="font_default_color" style="font-weight:normal">Commentaire</th><td><var>nCommentaire</var></td></tr>
+									</table><br/>
+							</fieldset>
+				      </div>
+					  				 
+				    </html>
+				  </defautValue>
+				</defautValuesHtml>
+
+				<liens>
+					<lien id="DownloadAttach">
+						<sql>
+							SELECT pj.displayname AS nom
+								 , pj.FilePath AS adresse
+								 , true as fromMail
+							FROM msg_mail_attach pj
+							JOIN msg_mail m ON m.fkClient=pj.fkClient AND m.fkDossier=pj.fkDossier AND m.Id=pj.fkMail
+							WHERE 	pj.fkClient=%SESSION_ClientId% 
+								AND pj.fkDossier=%SESSION_DossierId%
+								AND pj.fkMail=%SESSION_MailId%								
+							ORDER BY pj.displayname ASC;
+						</sql>
+					</lien>
+				</liens>
+
+				<!-- ________	SQL des actions  ______________ -->
+				<actions>
+					<submitSauver>
+						<validation>
+							<sql>
+								CALL PS_MsgMailIn_Update_Val(@xml
+								, %SESSION_UserId%
+								, %SESSION_ClientId%
+								, %SESSION_DossierId%
+								, %SESSION_MailId%
+								, 0);
+								SELECT @xml;
+							</sql>
+						</validation>
+					</submitSauver>
+				</actions>
+			</formConfigSql>
+			
+			<!-- ______________________________________________________
+					Mise en page du formulaire
+			______________________________________________________ -->
+			<!-- <formConfigLayout delete="DOWN:act_MsgMailIn_DeleteMAIL_MP?SESSION_HierarchiqueRetourN=0#et#POST_id2delete=%SESSION_MailId%#et#SESSION_DossierId=%SESSION_DossierId%"> -->
+			<formConfigLayout update="DOWN:act_MsgMailIn_UpdateRat_MP?SESSION_MailId=%SESSION_MailId%">
+				<zone titre="Rattachement" id="zone3">
+					<groupement>
+						<html id="rattachement" />
+					</groupement>
+				</zone>
+				<zone titre="Contenu du mail" id="zone1">
+					<displayButtons position="top">true</displayButtons>
+					<groupement>
+						<html id="ContenuMail" />
+					</groupement>
+				</zone>
+				<zone titre="Pièces jointes" id="zone2">
+					<groupement>
+						<liens libelle="" id="DownloadAttach"/>
+					</groupement>
+					<groupement>
+						<input id="NewDocFromMailPJ" bouton="bas">
+							<lienPopup libelle="Intégrer les pièces-jointes au dossier du protégé" url="NOPOPUP" idForm="DOWN:act_NewDocFromMailPJ?SESSION_MailId=%SESSION_MailId%" />
+						</input>
+					</groupement>
+				</zone>
+			</formConfigLayout>
+
+		</user>
+	</localhost>
+</form>
