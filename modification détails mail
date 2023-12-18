@@ -1,0 +1,239 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<form> <localhost> <user>
+
+<passageSession>
+<nom></nom>
+<valeur></valeur>
+</passageSession>
+
+<!-- ****** Preambule : variables de session, etc. ****** -->
+
+<!-- ______________________________________________________
+      Configuration Zend du formulaire
+___________________________________________________________ -->
+<formConfig>
+  <name>frm_MsgMailIn_UpdateRat_MP</name><!-- L'id html du formulaire : <form id="...  -->
+  <method>post</method>
+  <elements>
+    <variables_session>
+      <type>textarea</type>
+      <options>
+        <readonly/>
+        <value>Var session = ?</value>
+        <cols>100</cols> <rows>1</rows>
+      </options>
+    </variables_session>
+    <!-- ______________________________________________________
+          DESCRIPTION DU COURRIER
+    ___________________________________________________________ -->
+    <e_fkPers>
+      <type>text</type>
+      <options>
+        <label>Correspondant</label>
+      </options>
+    </e_fkPers>
+    <e_fkObligation>
+      <type>text</type>
+      <options>
+        <label>Contrat</label>
+      </options>
+    </e_fkObligation>
+    <e_fkBien>
+      <type>text</type>
+      <options>
+        <label>Bien</label>
+      </options>
+    </e_fkBien>
+    <e_Commentaires>
+      <type>textarea</type>
+      <options>
+        <label>Commentaire</label>
+        <cols>50</cols> <rows>8</rows>
+      </options>
+    </e_Commentaires>
+
+    <submitSauver>
+      <type>submit</type>
+      <options>
+        <label>Valider</label>
+      </options>
+    </submitSauver>
+    <submitAnnuler>
+      <type>submit</type>
+      <options>
+        <label>Retour</label>
+      </options>
+    </submitAnnuler>
+  </elements>
+</formConfig>
+
+<!-- **************************************************************************
+____________   Configuration "métier" spécifique du formulaire    ___________
+_______________________________________________________________________________ -->
+
+<formConfigSql>
+  <defaultValues>
+    <!-- Lecture de l'objet présenté par le formulaire  -->
+    <champsTexte>
+      <defautValue>
+        <sql>
+        <!-- ATTENTION Tous les champs rapportes par le SELECT doivent avoir un element de meme nom -->
+        SELECT
+        CONCAT('ClientId=',IFNULL(%SESSION_ClientId%,'null')
+          , ' ; UserId=',IFNULL(%SESSION_UserId%,'null')
+          , ' ; DossierId=',IFNULL(%SESSION_DossierId%,'null')
+          , ' ; PersonneProtegeeId=',IFNULL(%SESSION_PersonneProtegeeId%,'null')
+          , ' ; PersonneId=',IFNULL(%SESSION_PersonneId%,'null')
+          , ' ; MailId=', IFNULL(%SESSION_MailId%,'null')
+        ) AS variables_session;
+        </sql>
+      </defautValue>
+      <defautValue>
+        <sql>
+          SELECT fkObligation AS e_fkObligation
+               , fkPersonne AS e_fkPers
+               , fkBien AS e_fkBien
+               , Commentaires AS e_Commentaires
+            FROM msg_mail
+            WHERE fkClient = %SESSION_ClientId%
+            AND fkDossier = %SESSION_DossierId%
+            AND Id = %SESSION_MailId%;
+        </sql>
+      </defautValue>
+      <defautValue for="e_fkObligation" liste="liste" execution="noExecution">
+        <sql>
+SELECT ob.Id AS Id
+      , CONCAT(IF(ob.xType='ObGenerique'
+                , IFNULL(ob.Nature_LibelleCourt,'')
+                , CONCAT(IFNULL(ob.Type_LibelleCourt,''), ' - ', IFNULL(ob.Nature_LibelleCourt,''))
+                )
+              , ' - ', IFNULL(ob.Intitule,'')
+              , ' - ', IFNULL(ob.Reference,'')
+              , ' (', IFNULL(ob.Guichet,''), ')'
+              , IF(ob.xType!='ObGenerique', IFNULL(CONCAT(' - ', DATE_FORMAT(ob.DateDebut,'%%d/%%m/%%Y')),''),'')
+              ) AS Libelle
+      , UPPER(IF((ISNULL(ob.DateFin) OR ob.DateFin #sup# NOW()),'Contrats actifs','Contrats clos')) AS IsActif
+      , NmUniv.LibelleLong   AS Univers
+      , ob.Id as JsBase_Compare
+      , ob.fkTiersRelation AS e_fkPers_input
+      , ob.Id as JsBase_Compare
+      , ob.fkBien AS e_fkBien_input
+  FROM obgenerique ob
+  LEFT JOIN (
+            SELECT  ob.xType
+                  , ob.xNature
+                  , CONCAT( IFNULL(ob.xType,"")
+                  , ",", IFNULL(ob.xNature,"")
+                  , ",", IFNULL(fn_trreglecompatibilite_get_GroupNature(0,'Rc2ObDcNat','ObligDoc',ob.xType,ob.xNature),'*')) AS grp_Obj2_xNatureComp
+                  , fn_trreglecompatibilite_get_Name(0,'Rc2ObUniv','ObligUniv',ob.xType,ob.xNature)  AS Univers_Obj2_NameComp
+              FROM(
+                  SELECT DISTINCT xType, xNature
+                    FROM ob_obligation
+                    WHERE fkClient=%SESSION_ClientId%
+                      AND fkDossier=%SESSION_DossierId%
+                   ) ob
+              ) tmp
+      ON  ob.xtype = tmp.xType
+      AND IFNULL(ob.xNature,'')=IFNULL(tmp.xNature,'')
+  LEFT JOIN nmdcunivers NmUniv
+      ON  NmUniv.fkClient=0
+      AND NmUniv.Name=tmp.Univers_Obj2_NameComp
+  WHERE ob.fkClient=%SESSION_ClientId%
+    AND ob.fkDossier=%SESSION_DossierId%
+  <!-- GROUP BY ob.Id -->
+  ORDER BY IsActif, Univers, Libelle;
+        </sql>
+        <valueCol>Id</valueCol>
+        <labelCol>Libelle</labelCol>
+        <groupList>
+          <group>IsActif</group>
+          <group>Univers</group>
+        </groupList>
+        <RefCols>
+          <RefCol>LesNatures</RefCol>
+        </RefCols>
+        <pHolderLabel>--- Aucun ---</pHolderLabel>
+        <pHolderValue>0</pHolderValue>
+      </defautValue>
+      <defautValue for="e_fkPers" liste="liste" execution="noExecution">
+        <sql>
+SELECT DISTINCT p.ID AS Id
+              , CONCAT(IF((ISNULL(p.LibelleCourt) || p.LibelleCourt = 'Fournisseur'),'',p.LibelleCourt), IFNULL(p.Nature_LibelleCourt,'')) AS 'Groupe'
+              , p.Denomination_NP AS 'Denomination'
+  FROM pe_relationsociale rs
+  LEFT JOIN pegenerique_shortread_adresse_libelle p
+    ON ((p.fkClient = rs.fkClient OR p.fkClient = 0)
+    AND p.ID = rs.fkPE1)
+  LEFT JOIN pe_coordonnee_c coord ON (coord.fkclient=p.fkclient AND coord.fkPers=p.Id AND coord.fkclient IN (0,%SESSION_ClientId%))
+  WHERE (rs.fkClient = %SESSION_ClientId% OR rs.fkClient = 0)
+  AND rs.fkPE2 = %SESSION_PersonneProtegeeId%
+  AND rs.fkPE1 != %SESSION_PersonneProtegeeId%
+  GROUP BY p.ID
+  ORDER BY 2,3;
+        </sql>
+        <group>Groupe</group>
+        <valueCol>Id</valueCol>
+        <labelCol>Denomination</labelCol>
+        <pHolderLabel>--- Aucun ---</pHolderLabel>
+        <pHolderValue>null</pHolderValue>
+      </defautValue>
+      <defautValue for="e_fkBien" liste="liste" execution="noExecution">
+        <sql>
+          SELECT b.Id AS Id, CONCAT(IFNULL(n.LibelleLong,''),' - ',IFNULL(b.Intitule,'')) AS Libelle
+            FROM bi_bien b
+            LEFT JOIN nmbiennature n
+              ON b.xNature=n.Name
+            WHERE b.fkClient=%SESSION_ClientId%
+            AND b.fkDossier=%SESSION_DossierId%;
+        </sql>
+        <valueCol>Id</valueCol>
+        <labelCol>Libelle</labelCol>
+        <pHolderLabel>--- Aucun ---</pHolderLabel>
+        <pHolderValue>null</pHolderValue>
+      </defautValue>
+    </champsTexte>
+    <!-- _______  Liste de références  _____________ -->
+    <listesReference><!-- Liste des champs devant faire l'objet d'une requête SQL pour alimentation -->
+    </listesReference>
+  </defaultValues>
+
+  <!-- ________	SQL des actions  ______________ -->
+  <actions>
+    <submitSauver>
+      <validation>
+        <sql>
+          CALL PS_MsgMailIn_UpdateRattachement_Val_v2( @xml
+                                                 , %SESSION_UserId%
+                                                 , %SESSION_ClientId%
+                                                 , %SESSION_DossierId%
+                                                 , %SESSION_MailId%
+                                                 , %FIELD_e_fkObligation%
+                                                 , %FIELD_e_fkPers%
+                                                 , %FIELD_e_fkBien%
+                                                 , %FIELD_e_Commentaires%
+                                                  );
+          SELECT @xml;
+        </sql>
+      </validation>
+    </submitSauver>
+  </actions>
+</formConfigSql>
+
+<!-- ______________________________________________________
+    Mise en page du formulaire
+______________________________________________________ -->
+<!-- <formConfigLayout delete="DOWN:act_MsgMailIn_DeleteMAIL_MP?SESSION_HierarchiqueRetourN=0#et#POST_id2delete=%SESSION_MailId%#et#SESSION_DossierId=%SESSION_DossierId%"> -->
+<formConfigLayout>
+  <zone titre="Modifier le rattachement du mail" id="zone1">
+    <groupement alignement="vertical">
+      <input id="e_fkObligation" taille="large" class="ListeAutoComplete"/>
+      <input id="e_fkPers" taille="large" class="ListeAutoComplete"/>
+      <input id="e_fkBien" taille="large" class="ListeAutoComplete"/>
+      <input id="e_Commentaires" taille="large"/>
+    </groupement>
+  </zone>
+</formConfigLayout>
+
+</user>
+</localhost>
+</form>
