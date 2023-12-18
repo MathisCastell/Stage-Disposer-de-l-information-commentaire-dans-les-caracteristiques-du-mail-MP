@@ -4,6 +4,11 @@
 
 ![image](https://github.com/MathisCastell/Stage-Disposer-de-l-information-commentaire-dans-les-caracteristiques-du-mail-MP/assets/148212506/75dcc596-d765-4874-9449-641b2f8eb792)
 
+## Modification de la base de donnée pour accueillir le champ commentaire 
+
+ALTER TABLE egd.msg_mail
+ ADD Commentaires TEXT CHARACTER SET utf8 COLLATE utf8_general_ci AFTER fkIdExterne;
+
 ## Création de la page de détails
 
 Je défini dans un premier temps les champs en leur donnant un nom une valeur et un type.
